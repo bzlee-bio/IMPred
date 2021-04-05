@@ -1,12 +1,10 @@
+import argparse
 import tensorflow as tf
 import tensorflow.keras as keras
 from Bio import SeqIO
-import argparse
-
 import numpy as np
 from tensorflow.keras import layers
 from tensorflow.keras.regularizers import l2
-
 import pandas as pd
 
 
@@ -22,7 +20,6 @@ def encoder(seq_data,max_len):
             
     return encoded_data
 
-@tf.autograph.experimental.do_not_convert
 def im_dense_build(cache):
     for l in cache:
         if l[0]=='input':
@@ -48,7 +45,6 @@ def im_dense_build(cache):
     out = keras.layers.concatenate([out1, out2, out3, out4])
     return keras.Model(inp, out),keras.Model(inp, out1),keras.Model(inp, out2),keras.Model(inp, out3),keras.Model(inp, out4)
 
-@tf.autograph.experimental.do_not_convert
 def LSTM_layers():
     input_layer = keras.Input(shape=(300), batch_size=None)
     x = layers.Embedding(input_dim=input_shape,output_dim=out_dim, mask_zero=True)(input_layer)
@@ -64,7 +60,6 @@ def LSTM_layers():
     
     return keras.Model(input_layer, x)
 
-@tf.autograph.experimental.do_not_convert
 def GRU_layers():
     input_layer = keras.Input(shape=(300), batch_size=None)
     x = layers.Embedding(input_dim=input_shape,output_dim=out_dim, mask_zero=True)(input_layer)
@@ -82,14 +77,12 @@ def GRU_layers():
     
     return keras.Model(input_layer, x)
 
-@tf.autograph.experimental.do_not_convert
 def Dense_layer(output_layer):
     input_layer = keras.Input(shape=(output_layer.output.shape[1]), batch_size=None)
     x = layers.Dense(50)(input_layer)
     x = layers.Dense(1)(x)
     return keras.Model(input_layer, x)
 
-@tf.autograph.experimental.do_not_convert
 def im_dense_build(dense_str):
     for l in dense_str:
         if l[0]=='input':
@@ -105,10 +98,9 @@ def im_dense_build(dense_str):
 
     return keras.Model(inp, out)
             
-parser = argparse.ArgumentParser(description='Neurotoxicity estimation.')
+parser = argparse.ArgumentParser(description='Prediction of ion channel modulating-peptides')
 parser.add_argument('--fasta', metavar='fasta', type=str, help='input fasta file')
 parser.add_argument('--output', metavar='output', type=str, help='Output file')    
-# inp_fasta = str(sys.argv[1])
 args = parser.parse_args()
 
 inp_data = []
@@ -135,8 +127,6 @@ out_dim = 10
 
 activity = pd.DataFrame(['']*inp_seq.shape[0])
 for k in opt_model.keys():
-#     tf.keras.backend.clear_session()
-#     tf.compat.v1.reset_default_graph()
     if k=='Calcium' or k=='nAChR':
         top_model = LSTM_layers()
     else:
@@ -154,16 +144,13 @@ for k in opt_model.keys():
 
     activity.values[tf.squeeze(pred_res)>=0.5]='Modulator'
     activity.values[tf.squeeze(pred_res)<0.5]='-'
-#     activity[pred_res>=0.5] = 'Modulator'
-#     activity[pred_res<0.5] = '-'    
+
     temp = np.concatenate((pred_res, activity.values),1)
-#     res_pred[k]=tf.nn.sigmoid(model.predict(inp_seq))
+
     
     inp_data = pd.concat([inp_data,pd.DataFrame(temp,columns=[k+ ' probability',k+' prediction'])],axis=1)
-# total_res = ref
+
 inp_data.to_csv(args.output)
-#     print(res_pred)
-    # print(inp_data, res_pred)
 
 print('Prediction done ---------------------')
 print('Prediction results were saved ', args.output)
